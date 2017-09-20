@@ -7,13 +7,14 @@ import (
 type Sphere struct {
 	center Point3D
 	radius float64
+	color  *RGBColor // TEMP
 }
 
-func NewSphere(center Point3D, radius float64) Sphere {
-	return Sphere{center, radius}
+func NewSphere(center Point3D, radius float64) *Sphere {
+	return &Sphere{center, radius, Black()}
 }
 
-func (s Sphere) Hit(ray *Ray, shadeRec *ShadeRec) (bool, float64) {
+func (s *Sphere) Hit(ray *Ray, shadeRec *ShadeRec) (bool, float64) {
 	temp := ray.Origin.Subtract(s.center)
 	a := ray.Direction.Dot(ray.Direction)
 	b := temp.ScalarMul(2.0).Dot(ray.Direction)
@@ -44,4 +45,12 @@ func (s Sphere) Hit(ray *Ray, shadeRec *ShadeRec) (bool, float64) {
 	}
 
 	return false, -1
+}
+
+func (s *Sphere) SetColor(color *RGBColor) {
+	s.color = color
+}
+
+func (s *Sphere) GetColor() *RGBColor {
+	return s.color
 }

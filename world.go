@@ -2,9 +2,8 @@ package main
 
 type World struct {
 	viewPlane       ViewPlane
-	backgroundColor RGBColor
+	backgroundColor *RGBColor
 	objects         []GeometricObject
-	Sphere          Sphere
 	tracer          Tracer
 }
 
@@ -17,10 +16,20 @@ func NewWorld() *World {
 	w.viewPlane.PixelSize = 1.0
 	w.viewPlane.SetGamma(1.0)
 
-	w.backgroundColor = *White()
+	w.backgroundColor = White()
 	w.tracer = Tracer{&w}
 
-	w.Sphere = Sphere{Point3D{0, 0, 0}, 85}
+	sphere := NewSphere(Point3D{0, -25, 0}, 80)
+	sphere.SetColor(&RGBColor{1, 0, 0})
+	w.AddObject(sphere)
+
+	sphere = NewSphere(Point3D{0, 30, 0}, 60)
+	sphere.SetColor(&RGBColor{1, 1, 0})
+	w.AddObject(sphere)
+
+	plane := NewPlane(Point3D{0, 0, 0}, Normal{0, 1, 1})
+	plane.SetColor(&RGBColor{0, 0.3, 0})
+	w.AddObject(plane)
 
 	return &w
 }
@@ -43,11 +52,22 @@ func (w *World) RenderScene(callback RenderCallback) {
 			w.displayPixel(int(r), int(c), pixelColor, callback)
 		}
 	}
+}
 
+func (w *World) AddObject(obj GeometricObject) {
+	w.objects = append(w.objects, obj)
+}
+
+func (w *World) GetObjects() []GeometricObject {
+	return w.objects
+}
+
+func (w *World) GetBackgroundColor() *RGBColor {
+	return w.backgroundColor
 }
 
 func (w *World) displayPixel(row, col int, color *RGBColor, callback RenderCallback) {
 	x := col
 	y := w.viewPlane.Vres - row - 1
-	callback(x, y, color)
+	callback(x, y, color.MaxToOne())
 }

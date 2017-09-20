@@ -5,10 +5,25 @@ type Tracer struct {
 }
 
 func (t Tracer) TraceRay(ray *Ray) *RGBColor {
-	sr := NewShadeRec(t.world)
-	success, _ := t.world.Sphere.Hit(ray, &sr)
-	if success {
-		return Red()
+	sr := t.hitBareBonesObjects(ray)
+
+	if sr.HitAnObject {
+		return sr.Color
 	}
-	return Black()
+	return t.world.GetBackgroundColor()
+}
+
+func (t Tracer) hitBareBonesObjects(ray *Ray) ShadeRec {
+	sr := NewShadeRec(t.world)
+	tmin := K_HUGE_VALUE
+
+	for _, obj := range t.world.GetObjects() {
+		success, t := obj.Hit(ray, &sr)
+		if success && t < tmin {
+			sr.HitAnObject = true
+			tmin = t
+			sr.Color = obj.GetColor()
+		}
+	}
+	return sr
 }

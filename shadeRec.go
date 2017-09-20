@@ -4,7 +4,7 @@ type ShadeRec struct {
 	HitAnObject   bool
 	LocalHitPoint Point3D
 	Normal        Normal
-	Color         RGBColor
+	Color         *RGBColor
 	World         *World
 }
 
@@ -13,7 +13,7 @@ func NewShadeRec(world *World) ShadeRec {
 		false,
 		NewPoint3D(),
 		NewNormal(),
-		*Black(),
+		Black(),
 		world,
 	}
 }
