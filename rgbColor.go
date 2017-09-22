@@ -24,6 +24,10 @@ func (c *RGBColor) DivideBy(val float64) *RGBColor {
 	return &RGBColor{c.R / val, c.G / val, c.B / val}
 }
 
+func (c *RGBColor) Add(other *RGBColor) *RGBColor {
+	return &RGBColor{c.R + other.R, c.G + other.G, c.B + other.B}
+}
+
 func Black() *RGBColor {
 	return NewRGBColor()
 }

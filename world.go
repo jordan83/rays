@@ -1,13 +1,19 @@
 package main
 
+import (
+	"fmt"
+)
+
 type World struct {
 	viewPlane       ViewPlane
 	backgroundColor *RGBColor
 	objects         []GeometricObject
 	tracer          Tracer
+	sampler         PixelSampler
 }
 
 type RenderCallback func(row, col int, color *RGBColor)
+type PixelSampler func(w *World, ray *Ray, row, col int) *RGBColor
 
 func NewWorld() *World {
 	w := World{}
@@ -15,9 +21,11 @@ func NewWorld() *World {
 	w.viewPlane.Vres = 200
 	w.viewPlane.PixelSize = 1.0
 	w.viewPlane.SetGamma(1.0)
+	w.viewPlane.NumSamples = 16
 
-	w.backgroundColor = White()
+	w.backgroundColor = Black()
 	w.tracer = Tracer{&w}
+	w.sampler = JitteredSampling
 
 	sphere := NewSphere(Point3D{0, -25, 0}, 80)
 	sphere.SetColor(&RGBColor{1, 0, 0})
@@ -39,19 +47,17 @@ func (w *World) GetResolution() (int, int) {
 }
 
 func (w *World) RenderScene(callback RenderCallback) {
+	fmt.Printf("Starting...\n")
 	ray := Ray{Direction: NewVector3D(0, 0, -1)}
-	zw := 100.0
-	vres := float32(w.viewPlane.Vres)
-	hres := float32(w.viewPlane.Hres)
 
-	var r, c float32
-	for r = 0.0; r < vres; r++ {
-		for c = 0.0; c < hres; c++ {
-			ray.Origin = Point3D{float64(w.viewPlane.PixelSize * (c - hres/2.0 + 0.5)), float64(w.viewPlane.PixelSize * (r - vres/2.0 + 0.5)), zw}
-			pixelColor := w.tracer.TraceRay(&ray)
-			w.displayPixel(int(r), int(c), pixelColor, callback)
+	for r := 0; r < w.viewPlane.Vres; r++ {
+		for c := 0; c < w.viewPlane.Hres; c++ {
+			pixelColor := w.sampler(w, &ray, r, c)
+			w.displayPixel(r, c, pixelColor, callback)
 		}
 	}
+
+	fmt.Printf("Done!")
 }
 
 func (w *World) AddObject(obj GeometricObject) {
@@ -64,6 +70,14 @@ func (w *World) GetObjects() []GeometricObject {
 
 func (w *World) GetBackgroundColor() *RGBColor {
 	return w.backgroundColor
+}
+
+func (w *World) GetViewPlane() ViewPlane {
+	return w.viewPlane
+}
+
+func (w *World) GetTracer() Tracer {
+	return w.tracer
 }
 
 func (w *World) displayPixel(row, col int, color *RGBColor, callback RenderCallback) {

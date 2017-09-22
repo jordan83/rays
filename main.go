@@ -52,9 +52,12 @@ func main() {
 		}
 	}()
 
+	x, y := world.GetResolution()
+
 	da.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
+
 		cr.SetSourceRGB(0, 0, 0)
-		cr.Rectangle(0, 0, 200, 200)
+		cr.Rectangle(0, 0, float64(x), float64(y))
 		cr.Fill()
 
 		mux.Lock()
@@ -67,7 +70,6 @@ func main() {
 	})
 
 	// Set the default window size.
-	x, y := world.GetResolution()
 	win.SetDefaultSize(x, y)
 
 	// Recursively show all widgets contained in this window.
