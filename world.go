@@ -76,6 +76,33 @@ func (w *World) RenderScene(callback RenderCallback) {
 	fmt.Printf("Done!")
 }
 
+func (w *World) RenderPerspective(callback RenderCallback) {
+	fmt.Printf("Starting...\n")
+	vp := w.viewPlane
+	ray := Ray{Origin: Point3D{0, 0, -10000}}
+	pp := NewPoint3D()
+
+	for r := 0; r < w.viewPlane.Vres; r++ {
+		for c := 0; c < w.viewPlane.Hres; c++ {
+
+			pixelColor := Black()
+			for j := 0; j < vp.NumSamples; j++ {
+				sample := w.sampler.SampleUnitSquare()
+
+				pp.X = float64(vp.PixelSize) * (float64(c) - 0.5*float64(vp.Hres) + sample.X)
+				pp.Y = float64(vp.PixelSize) * (float64(r) - 0.5*float64(vp.Vres) + sample.Y)
+				ray.Direction = Point3D{pp.X, pp.Y, ZW}.Subtract(ray.Origin).Normalize()
+
+				pixelColor = pixelColor.Add(w.tracer.TraceRay(&ray))
+			}
+
+			w.displayPixel(r, c, pixelColor.DivideBy(float64(vp.NumSamples)), callback)
+		}
+	}
+
+	fmt.Printf("Done!")
+}
+
 func (w *World) AddObject(obj GeometricObject) {
 	w.objects = append(w.objects, obj)
 }

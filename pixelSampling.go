@@ -5,9 +5,49 @@ import (
 	"math/rand"
 )
 
-// Genrates numSets sets of samples. Each set is composed of numSamples samples
-// of a unit square (the z value of the point is ignored.)
-type SampleGenerator func(numSets, numSamples int) []*Point3D
+type Sampler struct {
+	jump            int
+	count           int
+	numSamples      int
+	numSets         int
+	samples         []*Point3D
+	shuffledIndexes []int
+}
+
+func NewSampler(numSamples int) *Sampler {
+	numSets := 83
+	var samples []*Point3D
+	if numSamples > 1 {
+		samples = multiJitteredSampler(numSets, numSamples)
+	} else {
+		samples = regularSampler(numSets, numSamples)
+	}
+
+	return &Sampler{0, 0, numSamples, numSets, samples, getShuffledIndexes(numSets, numSamples)}
+}
+
+func (s *Sampler) SampleUnitSquare() Point3D {
+	if s.count%s.numSamples == 0 {
+		s.jump = (rand.Int() % s.numSets) * s.numSamples
+	}
+
+	s.count += 1
+	return *s.samples[s.jump+s.shuffledIndexes[s.jump+s.count%s.numSamples]]
+}
+
+func getShuffledIndexes(numSets, numSamples int) []int {
+	shuffledIndexes := make([]int, 0, numSamples*numSets)
+
+	for p := 0; p < numSets; p++ {
+		indexes := rand.Perm(numSamples)
+
+		for j := 0; j < numSamples; j++ {
+			shuffledIndexes = append(shuffledIndexes, indexes[j])
+		}
+	}
+
+	return shuffledIndexes
+}
 
 func regularSampler(numSets, numSamples int) []*Point3D {
 	n := int(math.Sqrt(float64(numSamples)))
@@ -22,14 +62,6 @@ func regularSampler(numSets, numSamples int) []*Point3D {
 		}
 	}
 	return points
-}
-
-func randFloat(low int, high float64) float64 {
-	return rand.Float64()*(high-float64(low)) + float64(low)
-}
-
-func randInt(low, high int) int {
-	return int(randFloat(0, float64(high-low+1))) + low
 }
 
 func multiJitteredSampler(numSets, numSamples int) []*Point3D {
@@ -79,46 +111,10 @@ func multiJitteredSampler(numSets, numSamples int) []*Point3D {
 	return points
 }
 
-type Sampler struct {
-	jump            int
-	count           int
-	numSamples      int
-	numSets         int
-	samples         []*Point3D
-	shuffledIndexes []int
+func randFloat(low int, high float64) float64 {
+	return rand.Float64()*(high-float64(low)) + float64(low)
 }
 
-func NewSampler(numSamples int) *Sampler {
-	numSets := 83
-	var samples []*Point3D
-	if numSamples > 1 {
-		samples = multiJitteredSampler(numSets, numSamples)
-	} else {
-		samples = regularSampler(numSets, numSamples)
-	}
-
-	return &Sampler{0, 0, numSamples, numSets, samples, getShuffledIndexes(numSets, numSamples)}
-}
-
-func (s *Sampler) SampleUnitSquare() Point3D {
-	if s.count%s.numSamples == 0 {
-		s.jump = (rand.Int() % s.numSets) * s.numSamples
-	}
-
-	s.count += 1
-	return *s.samples[s.jump+s.shuffledIndexes[s.jump+s.count%s.numSamples]]
-}
-
-func getShuffledIndexes(numSets, numSamples int) []int {
-	shuffledIndexes := make([]int, 0, numSamples*numSets)
-
-	for p := 0; p < numSets; p++ {
-		indexes := rand.Perm(numSamples)
-
-		for j := 0; j < numSamples; j++ {
-			shuffledIndexes = append(shuffledIndexes, indexes[j])
-		}
-	}
-
-	return shuffledIndexes
+func randInt(low, high int) int {
+	return int(randFloat(0, float64(high-low+1))) + low
 }
