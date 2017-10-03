@@ -36,8 +36,29 @@ func NewPinholeCamera(cameraDef CameraDef, viewPlaneDistance, zoomFactor float64
 	}
 }
 
-func (c PinholeCamera) RenderScene(w World) {
+func (cam PinholeCamera) RenderScene(w *World, callback RenderCallback) {
+	vp := w.GetViewPlane()
+	ray := Ray{Origin: cam.cameraDef.Eye}
+	pixelSize := float64(vp.PixelSize) / cam.zoomFactor
+	pp := NewPoint3D()
 
+	for r := 0; r < w.viewPlane.Vres; r++ {
+		for c := 0; c < w.viewPlane.Hres; c++ {
+
+			pixelColor := Black()
+			for j := 0; j < vp.NumSamples; j++ {
+				sample := w.GetSampler().SampleUnitSquare()
+
+				pp.X = pixelSize * (float64(c) - 0.5*float64(vp.Hres) + sample.X)
+				pp.Y = pixelSize * (float64(r) - 0.5*float64(vp.Vres) + sample.Y)
+				ray.Direction = cam.getDirection(pp)
+
+				pixelColor = pixelColor.Add(w.GetTracer().TraceRay(&ray))
+			}
+
+			callback(r, c, pixelColor.DivideBy(float64(vp.NumSamples)))
+		}
+	}
 }
 
 // Gets the direction of the point given the camera position
